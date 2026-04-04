@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Gift, Heart, MapPin, Check, Plus, X, Sparkles } from 'lucide-react';
+import { Check, Gift, Heart, MapPin, Plus, Sparkles, X } from 'lucide-react';
 
 interface Wish {
   id: string;
@@ -11,177 +11,167 @@ interface Wish {
   createdAt: string;
 }
 
+const STORAGE_KEY = 'wishlist';
+
 const initialWishes: Wish[] = [
   {
     id: '1',
-    title: '想和你去好多地方',
-    description: '一起去探索这个世界的美好',
+    title: '一起去陌生的城市住两天',
+    description: '不赶行程，只把散步和吃饭都慢下来。',
     category: 'place',
     completed: false,
-    createdAt: '2024-01-01',
+    createdAt: '2026-01-01',
   },
   {
     id: '2',
-    title: '一起看日出日落',
-    description: '在海边或山顶，看太阳升起和落下',
+    title: '一起看一次完整日出',
+    description: '最好是提前准备好热饮和毛毯。',
     category: 'thing',
     completed: false,
-    createdAt: '2024-01-01',
+    createdAt: '2026-01-05',
   },
   {
     id: '3',
-    title: '一起学做一道菜',
-    description: '为对方做一顿美味的晚餐',
+    title: '一起做一顿认真的晚餐',
+    description: '从买菜到摆盘都算作约会的一部分。',
     category: 'thing',
     completed: false,
-    createdAt: '2024-01-01',
+    createdAt: '2026-01-10',
   },
 ];
 
+function readWishes() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+
+  if (!stored) {
+    return initialWishes;
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as Wish[];
+    return parsed.length > 0 ? parsed : initialWishes;
+  } catch {
+    return initialWishes;
+  }
+}
+
 export default function Wishlist() {
-  const [wishes, setWishes] = useState<Wish[]>(initialWishes);
+  const [wishes, setWishes] = useState<Wish[]>(() => readWishes());
   const [isAdding, setIsAdding] = useState(false);
   const [newWish, setNewWish] = useState<Partial<Wish>>({
-    title: '', description: '', category: 'thing',
+    title: '',
+    description: '',
+    category: 'thing',
   });
   const [filter, setFilter] = useState<'all' | 'place' | 'thing'>('all');
 
   useEffect(() => {
-    const savedWishes = localStorage.getItem('wishlist');
-    if (savedWishes) {
-      setWishes(JSON.parse(savedWishes));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(wishes));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(wishes));
   }, [wishes]);
 
   const handleAddWish = () => {
-    if (newWish.title) {
-      const wish: Wish = {
-        id: Date.now().toString(),
-        title: newWish.title,
-        description: newWish.description,
-        category: newWish.category || 'thing',
-        completed: false,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setWishes([wish, ...wishes]); 
-      setNewWish({ title: '', description: '', category: 'thing' });
-      setIsAdding(false);
+    if (!newWish.title?.trim()) {
+      return;
     }
+
+    const wish: Wish = {
+      id: Date.now().toString(),
+      title: newWish.title.trim(),
+      description: newWish.description?.trim(),
+      category: newWish.category ?? 'thing',
+      completed: false,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    setWishes((prev) => [wish, ...prev]);
+    setNewWish({ title: '', description: '', category: 'thing' });
+    setIsAdding(false);
   };
 
-  const toggleComplete = (id: string) => {
-    setWishes((prev) =>
-      prev.map((wish) =>
-        wish.id === id ? { ...wish, completed: !wish.completed } : wish
-      )
-    );
-  };
-
-  const deleteWish = (id: string) => {
-    setWishes((prev) => prev.filter((wish) => wish.id !== id));
-  };
-
-  const filteredWishes = wishes.filter((wish) =>
-    filter === 'all' ? true : wish.category === filter
-  );
-
-  const completedCount = wishes.filter((w) => w.completed).length;
+  const filteredWishes = wishes.filter((wish) => (filter === 'all' ? true : wish.category === filter));
+  const completedCount = wishes.filter((wish) => wish.completed).length;
   const progress = wishes.length > 0 ? (completedCount / wishes.length) * 100 : 0;
 
   return (
     <div className="page-container">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        
         <div className="page-header">
           <h1 className="page-title">
             <Gift className="text-charcoal-light" strokeWidth={1} />
             心愿清单
           </h1>
-          <p className="page-subtitle">记录我们想一起完成的事情</p>
+          <p className="page-subtitle">把想一起完成的事收进一张清单，慢慢勾掉也很有成就感。</p>
         </div>
 
         <div className="glass-panel progress-container">
-          <span className="text-sm text-charcoal-light">完成进度</span>
+          <span>完成进度</span>
           <div className="progress-bar">
-            <motion.div
-              className="progress-fill"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            />
+            <motion.div className="progress-fill" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }} />
           </div>
-          <span className="text-sm text-charcoal-light" style={{ minWidth: '40px', textAlign: 'right' }}>
-            {completedCount} / {wishes.length}
-          </span>
+          <span>{completedCount} / {wishes.length}</span>
         </div>
 
-        <div className="action-bar" style={{ justifyContent: 'space-between' }}>
+        <div className="action-bar wishlist-actions">
           <div className="filter-bar" style={{ marginBottom: 0 }}>
-            {(['all', 'place', 'thing'] as const).map((f) => (
+            {(['all', 'place', 'thing'] as const).map((value) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`filter-btn ${filter === f ? 'active' : ''}`}
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={`filter-btn ${filter === value ? 'active' : ''}`}
               >
-                {f === 'all' ? '全部' : f === 'place' ? '想去的地方' : '想做的事'}
+                {value === 'all' ? '全部' : value === 'place' ? '想去的地方' : '想做的事'}
               </button>
             ))}
           </div>
-          <button onClick={() => setIsAdding(!isAdding)} className="btn-outline">
-            {isAdding ? <X size={16} strokeWidth={1} /> : <Plus size={16} strokeWidth={1} />}
+          <button type="button" onClick={() => setIsAdding((prev) => !prev)} className="btn-outline">
+            {isAdding ? <X size={16} strokeWidth={1.2} /> : <Plus size={16} strokeWidth={1.2} />}
             <span>{isAdding ? '取消' : '添加心愿'}</span>
           </button>
         </div>
 
-        {isAdding && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="glass-panel form-panel"
-            style={{ overflow: 'hidden' }}
-          >
-            <h3 className="text-lg font-serif mb-2 text-charcoal">添加新心愿</h3>
+        {isAdding ? (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass-panel form-panel">
+            <h3 className="section-caption">写下一件想一起完成的事</h3>
             <div className="form-row">
               <button
-                onClick={() => setNewWish({ ...newWish, category: 'place' })}
+                type="button"
+                onClick={() => setNewWish((prev) => ({ ...prev, category: 'place' }))}
                 className={`btn-outline ${newWish.category === 'place' ? 'active' : ''}`}
-                style={{ flex: 1, justifyContent: 'center', borderColor: newWish.category === 'place' ? 'var(--rose-gold)' : '' }}
               >
-                <MapPin size={16} strokeWidth={1} /> 想去的地方
+                <MapPin size={16} strokeWidth={1.2} />
+                想去的地方
               </button>
               <button
-                onClick={() => setNewWish({ ...newWish, category: 'thing' })}
+                type="button"
+                onClick={() => setNewWish((prev) => ({ ...prev, category: 'thing' }))}
                 className={`btn-outline ${newWish.category === 'thing' ? 'active' : ''}`}
-                style={{ flex: 1, justifyContent: 'center', borderColor: newWish.category === 'thing' ? 'var(--rose-gold)' : '' }}
               >
-                <Heart size={16} strokeWidth={1} /> 想做的事
+                <Heart size={16} strokeWidth={1.2} />
+                想做的事
               </button>
             </div>
             <input
               type="text"
               placeholder="心愿标题"
               value={newWish.title}
-              onChange={(e) => setNewWish({ ...newWish, title: e.target.value })}
+              onChange={(event) => setNewWish((prev) => ({ ...prev, title: event.target.value }))}
               className="input-minimal"
             />
             <textarea
-              placeholder="详细描述（可选）..."
+              placeholder="可以补一点细节，比如想怎么实现"
               value={newWish.description}
-              onChange={(e) => setNewWish({ ...newWish, description: e.target.value })}
+              onChange={(event) => setNewWish((prev) => ({ ...prev, description: event.target.value }))}
               className="input-minimal"
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={handleAddWish} className="btn-outline">
-                <Check size={16} strokeWidth={1} /> 确认添加
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn-outline" onClick={handleAddWish}>
+                <Check size={16} strokeWidth={1.2} />
+                确认添加
               </button>
             </div>
           </motion.div>
-        )}
+        ) : null}
 
         <div className="list-container">
           {filteredWishes.map((wish, index) => (
@@ -189,47 +179,43 @@ export default function Wishlist() {
               key={wish.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.04 }}
               className={`glass-panel list-item wish-item ${wish.completed ? 'completed' : ''}`}
             >
               <button
-                onClick={() => toggleComplete(wish.id)}
+                type="button"
+                onClick={() =>
+                  setWishes((prev) =>
+                    prev.map((item) =>
+                      item.id === wish.id ? { ...item, completed: !item.completed } : item,
+                    ),
+                  )
+                }
                 className={`wish-checkbox ${wish.completed ? 'completed' : ''}`}
               >
-                {wish.completed && <Check size={12} strokeWidth={2} />}
+                {wish.completed ? <Check size={12} strokeWidth={2} /> : null}
               </button>
 
               <div className="list-item-content">
                 <div className="list-item-title">
-                  {wish.category === 'place' ? (
-                    <MapPin size={14} strokeWidth={1} className="text-charcoal-light" />
-                  ) : (
-                    <Heart size={14} strokeWidth={1} className="text-charcoal-light" />
-                  )}
+                  {wish.category === 'place' ? <MapPin size={14} strokeWidth={1.2} /> : <Heart size={14} strokeWidth={1.2} />}
                   {wish.title}
-                  {wish.title.includes('好多') && <Sparkles size={14} strokeWidth={1} className="text-charcoal-light" />}
+                  {wish.title.includes('一起') ? <Sparkles size={14} strokeWidth={1.2} /> : null}
                 </div>
-                {wish.description && <p className="list-item-desc">{wish.description}</p>}
+                {wish.description ? <p className="list-item-desc">{wish.description}</p> : null}
                 <div className="list-item-meta">{wish.createdAt}</div>
               </div>
 
               <button
-                onClick={() => deleteWish(wish.id)}
+                type="button"
+                onClick={() => setWishes((prev) => prev.filter((item) => item.id !== wish.id))}
                 className="list-item-action"
-                style={{ padding: '8px' }}
               >
-                <X size={16} strokeWidth={1} />
+                <X size={16} strokeWidth={1.2} />
               </button>
             </motion.div>
           ))}
         </div>
-
-        {filteredWishes.length === 0 && (
-          <div className="empty-state">
-            <Gift size={32} strokeWidth={1} />
-            <p>还没有心愿，快添加一些吧！</p>
-          </div>
-        )}
       </motion.div>
     </div>
   );

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Heart, Send, Sparkles, Trash2, Quote } from 'lucide-react';
+import { Heart, MessageCircle, Quote, Send, Sparkles, Trash2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -10,114 +10,108 @@ interface Message {
   likes: number;
 }
 
+const STORAGE_KEY = 'messages';
+
 const loveQuotes = [
-  '遇见你，是我这辈子最美好的意外。',
-  '我想和你一起，走过每一个春夏秋冬。',
-  '有你在身边，每一天都是情人节。',
-  '你是我心中最柔软的地方。',
-  '愿我们的爱情，像星星一样永恒。',
-  '和你在一起的每一秒，都是幸福的。',
-  '你是我想要共度余生的人。',
-  '爱情不是寻找完美的人，而是学会用完美的眼光看待不完美的人。',
+  '遇见你，是我这段人生里最温柔的意外。',
+  '和你一起过的日子，会把普通日常都变成节日。',
+  '你出现之后，我开始认真珍惜每一次并肩。',
+  '世界很大，但我想记住的中心总是你。',
+  '如果要许愿，我希望今后的仪式感都和你有关。',
 ];
 
-const initialMessages: Message[] = [
+const defaultMessages: Message[] = [
   {
     id: '1',
-    content: '今天也是爱你的一天！',
+    content: '今天也想认真记录一下，我很喜欢和你一起慢慢往前走。',
     author: '宝宝',
     createdAt: new Date().toISOString(),
     likes: 5,
   },
 ];
 
+function readMessages() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+
+  if (!stored) {
+    return defaultMessages;
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as Message[];
+    return parsed.length > 0 ? parsed : defaultMessages;
+  } catch {
+    return defaultMessages;
+  }
+}
+
+function getRandomQuote() {
+  return loveQuotes[Math.floor(Math.random() * loveQuotes.length)];
+}
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor(diff / (1000 * 60));
+
+  if (days > 0) return `${days} 天前`;
+  if (hours > 0) return `${hours} 小时前`;
+  if (minutes > 0) return `${minutes} 分钟前`;
+  return '刚刚';
+}
+
 export default function Messages() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>(() => readMessages());
   const [newMessage, setNewMessage] = useState('');
   const [author, setAuthor] = useState('');
-  const [randomQuote, setRandomQuote] = useState('');
+  const [randomQuote, setRandomQuote] = useState(() => getRandomQuote());
 
   useEffect(() => {
-    const savedMessages = localStorage.getItem('messages');
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
-    setRandomQuote(loveQuotes[Math.floor(Math.random() * loveQuotes.length)]);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('messages', JSON.stringify(messages));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
   const handleSendMessage = () => {
-    if (newMessage.trim() && author.trim()) {
-      const message: Message = {
-        id: Date.now().toString(),
-        content: newMessage.trim(),
-        author: author.trim(),
-        createdAt: new Date().toISOString(),
-        likes: 0,
-      };
-      setMessages([message, ...messages]);
-      setNewMessage('');
+    if (!newMessage.trim() || !author.trim()) {
+      return;
     }
-  };
 
-  const handleLike = (id: string) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === id ? { ...msg, likes: msg.likes + 1 } : msg
-      )
-    );
-  };
+    const message: Message = {
+      id: Date.now().toString(),
+      content: newMessage.trim(),
+      author: author.trim(),
+      createdAt: new Date().toISOString(),
+      likes: 0,
+    };
 
-  const handleDelete = (id: string) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
-  };
-
-  const refreshQuote = () => {
-    setRandomQuote(loveQuotes[Math.floor(Math.random() * loveQuotes.length)]);
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor(diff / (1000 * 60));
-
-    if (days > 0) return `${days}天前`;
-    if (hours > 0) return `${hours}小时前`;
-    if (minutes > 0) return `${minutes}分钟前`;
-    return '刚刚';
+    setMessages((prev) => [message, ...prev]);
+    setNewMessage('');
   };
 
   return (
     <div className="page-container">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        
         <div className="page-header">
           <h1 className="page-title">
             <MessageCircle className="text-charcoal-light" strokeWidth={1} />
             甜蜜留言
           </h1>
-          <p className="page-subtitle">写下想对对方说的话</p>
+          <p className="page-subtitle">写一点只想留给对方看的话，让页面也有回信感。</p>
         </div>
 
-        <motion.div
-          className="glass-panel"
-          style={{ padding: '32px', textAlign: 'center', cursor: 'pointer', marginBottom: '40px' }}
-          onClick={refreshQuote}
+        <motion.button
+          type="button"
+          className="glass-panel quote-panel"
+          onClick={() => setRandomQuote(getRandomQuote())}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
         >
-          <Quote className="text-rose-gold mx-auto mb-4" strokeWidth={1} />
-          <p className="font-serif text-charcoal italic mb-3" style={{ fontSize: '1.1rem', letterSpacing: '0.05em' }}>
-            "{randomQuote}"
-          </p>
-          <p className="text-xs text-charcoal-light tracking-wide">点击切换</p>
-        </motion.div>
+          <Quote className="text-rose-gold" strokeWidth={1} />
+          <p>{randomQuote}</p>
+          <span>点击换一句</span>
+        </motion.button>
 
         <div className="glass-panel form-panel">
           <div className="form-row">
@@ -125,25 +119,26 @@ export default function Messages() {
               type="text"
               placeholder="你的名字"
               value={author}
-              onChange={(e) => setAuthor(e.target.value)}
+              onChange={(event) => setAuthor(event.target.value)}
               className="input-minimal"
-              style={{ flex: '0 0 150px' }}
+              style={{ flex: '0 0 180px' }}
             />
           </div>
           <textarea
-            placeholder="写下你想说的话..."
+            placeholder="想说的话写在这里……"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(event) => setNewMessage(event.target.value)}
             className="input-minimal"
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
+              type="button"
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || !author.trim()}
               className="btn-outline"
-              style={{ opacity: (!newMessage.trim() || !author.trim()) ? 0.5 : 1 }}
             >
-              <Send size={16} strokeWidth={1} /> 发送留言
+              <Send size={16} strokeWidth={1.2} />
+              发送留言
             </button>
           </div>
         </div>
@@ -155,69 +150,48 @@ export default function Messages() {
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ delay: index * 0.05 }}
-                className="glass-panel list-item"
-                style={{ flexDirection: 'column', gap: '12px' }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ delay: index * 0.04 }}
+                className="glass-panel list-item message-card"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ 
-                      width: '32px', height: '32px', 
-                      borderRadius: '50%', border: '1px solid var(--rose-gold)', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--serif)', color: 'var(--rose-gold)', fontSize: '0.9rem'
-                    }}>
-                      {message.author.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="text-charcoal font-serif">{message.author}</h4>
-                      <span className="text-xs text-charcoal-light" style={{ letterSpacing: '0.05em' }}>
-                        {formatDate(message.createdAt)}
-                      </span>
-                    </div>
+                <div className="message-card-top">
+                  <div className="message-avatar">{message.author.charAt(0)}</div>
+                  <div>
+                    <h4>{message.author}</h4>
+                    <span>{formatDate(message.createdAt)}</span>
                   </div>
                   <button
-                    onClick={() => handleDelete(message.id)}
+                    type="button"
+                    onClick={() => setMessages((prev) => prev.filter((item) => item.id !== message.id))}
                     className="list-item-action"
                   >
-                    <Trash2 size={16} strokeWidth={1} />
+                    <Trash2 size={16} strokeWidth={1.2} />
                   </button>
                 </div>
 
-                <p className="text-charcoal-light my-2 leading-relaxed whitespace-pre-wrap font-serif">
-                  {message.content}
-                </p>
+                <p className="message-content">{message.content}</p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <div className="message-card-bottom">
                   <button
-                    onClick={() => handleLike(message.id)}
-                    className="list-item-action"
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                    type="button"
+                    className="list-item-action message-like-button"
+                    onClick={() =>
+                      setMessages((prev) =>
+                        prev.map((item) =>
+                          item.id === message.id ? { ...item, likes: item.likes + 1 } : item,
+                        ),
+                      )
+                    }
                   >
-                    <Heart
-                      size={14}
-                      strokeWidth={1}
-                      fill={message.likes > 0 ? 'var(--rose-gold)' : 'none'}
-                      color={message.likes > 0 ? 'var(--rose-gold)' : 'currentColor'}
-                    />
-                    <span style={{ color: message.likes > 0 ? 'var(--rose-gold)' : '' }}>
-                      {message.likes > 0 ? message.likes : '点赞'}
-                    </span>
+                    <Heart size={14} strokeWidth={1.2} fill={message.likes > 0 ? 'var(--rose-gold)' : 'none'} />
+                    <span>{message.likes > 0 ? message.likes : '点个喜欢'}</span>
                   </button>
-                  <Sparkles size={14} strokeWidth={1} className="text-charcoal-light" style={{ opacity: 0.5 }} />
+                  <Sparkles size={14} strokeWidth={1.2} className="text-charcoal-light" />
                 </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
-
-        {messages.length === 0 && (
-          <div className="empty-state">
-            <MessageCircle size={32} strokeWidth={1} />
-            <p>还没有留言，来写第一条吧！</p>
-          </div>
-        )}
       </motion.div>
     </div>
   );

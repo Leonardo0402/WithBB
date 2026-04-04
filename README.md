@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# WithBB
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一个基于 `Vite + React + TypeScript` 的情侣纪念站点，现在已经扩展出一整页“游戏乐园”。
 
-Currently, two official plugins are available:
+## 现在包含什么
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 首页倒计时与纪念入口
+- 时光轴
+- 相册墙
+- 心愿清单
+- 留言板
+- 游戏乐园
+  - `2048`
+  - `弹弓攻城`（愤怒的小鸟致敬式物理弹射玩法）
+  - `贪吃蛇`
+  - `记忆翻牌`
+  - `海龟汤（GLM-4.6V 实时主持）`
 
-## React Compiler
+## 本地开发
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+默认开发地址通常是 `http://localhost:5173`。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 构建与检查
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run lint
+npm run build
 ```
+
+## 海龟汤的 GLM-4.6V 接入方式
+
+- 页面内提供 `GLM-4.6V API Key` 输入框。
+- Key 只保存在浏览器当前会话的 `sessionStorage` 中。
+- Key 不写入源码、不写入 `.env`、不会进入 Git 提交。
+- 前端直接调用智谱官方 OpenAI 兼容接口：
+  - `https://open.bigmodel.cn/api/paas/v4/chat/completions`
+- 当前模型固定为：
+  - `glm-4.6v`
+
+使用方式：
+
+1. 打开“游戏乐园”。
+2. 进入“海龟汤”。
+3. 输入你的 API Key。
+4. 点击“开始新汤”。
+
+## 主要依赖
+
+- `react`
+- `framer-motion`
+- `lucide-react`
+- `matter-js`
+
+## 说明
+
+- 相册与记忆翻牌默认复用 `public/pic/` 中的照片资源。
+- 游戏数据中的最高分、留言、心愿等内容会保存在浏览器本地存储中。

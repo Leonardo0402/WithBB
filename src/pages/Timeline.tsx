@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Plus, X } from 'lucide-react';
 
@@ -11,19 +11,21 @@ interface TimelineEvent {
   isSpecial?: boolean;
 }
 
+const STORAGE_KEY = 'timeline-events';
+
 const initialEvents: TimelineEvent[] = [
   {
     id: '1',
     date: '2025-12-14',
     title: '我们的开始',
-    description: '从这一天起，我们的故事正式开始了。',
+    description: '从这一天起，故事终于有了双人章节。',
     isSpecial: true,
   },
   {
     id: '2',
-    date: '2025-02-10',
-    title: '第一个情人节',
-    description: '一起度过的第一个情人节，充满了甜蜜和惊喜。',
+    date: '2026-02-14',
+    title: '第一份节日仪式感',
+    description: '一起认真过节，从礼物到散步都变得值得反复记住。',
     location: '徐州',
     isSpecial: true,
   },
@@ -35,55 +37,69 @@ const DiamondHeart = () => (
   </svg>
 );
 
+function readEvents() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+
+  if (!stored) {
+    return initialEvents;
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as TimelineEvent[];
+    return parsed.length > 0 ? parsed : initialEvents;
+  } catch {
+    return initialEvents;
+  }
+}
+
 export default function Timeline() {
-  const [events, setEvents] = useState<TimelineEvent[]>(initialEvents);
+  const [events, setEvents] = useState<TimelineEvent[]>(() => readEvents());
   const [isAdding, setIsAdding] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<TimelineEvent>>({
-    date: '', title: '', description: '', location: '',
+    date: '',
+    title: '',
+    description: '',
+    location: '',
   });
 
-  const handleAddEvent = () => {
-    if (newEvent.date && newEvent.title && newEvent.description) {
-      const event: TimelineEvent = {
-        id: Date.now().toString(),
-        date: newEvent.date,
-        title: newEvent.title,
-        description: newEvent.description,
-        location: newEvent.location,
-        isSpecial: false,
-      };
-      setEvents([...events, event].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-      setNewEvent({ date: '', title: '', description: '', location: '' });
-      setIsAdding(false);
-    }
-  };
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  }, [events]);
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return {
-      year: date.getFullYear(),
-      month: date.getMonth() + 1,
-      day: date.getDate(),
+  const handleAddEvent = () => {
+    if (!newEvent.date || !newEvent.title || !newEvent.description) {
+      return;
+    }
+
+    const event: TimelineEvent = {
+      id: Date.now().toString(),
+      date: newEvent.date,
+      title: newEvent.title,
+      description: newEvent.description,
+      location: newEvent.location,
+      isSpecial: false,
     };
+
+    setEvents((prev) =>
+      [...prev, event].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    );
+    setNewEvent({ date: '', title: '', description: '', location: '' });
+    setIsAdding(false);
   };
 
   return (
     <div className="page-container">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{ width: '100%' }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%' }}>
         <div className="page-header">
           <h1 className="page-title">
             <Calendar className="text-charcoal-light" strokeWidth={1} />
             我们的时光
           </h1>
-          <p className="page-subtitle">记录每一个值得纪念的瞬间</p>
+          <p className="page-subtitle">把值得纪念的事按顺序排开，回头看就知道走了多远。</p>
         </div>
 
         <div className="action-bar">
-          <button onClick={() => setIsAdding(!isAdding)} className="btn-outline">
+          <button type="button" onClick={() => setIsAdding((prev) => !prev)} className="btn-outline">
             {isAdding ? <X size={16} strokeWidth={1} /> : <Plus size={16} strokeWidth={1} />}
             <span>{isAdding ? '取消' : '添加回忆'}</span>
           </button>
@@ -93,23 +109,22 @@ export default function Timeline() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
             className="glass-panel form-panel"
             style={{ overflow: 'hidden' }}
           >
-            <h3 className="text-lg font-serif mb-2 text-charcoal">添加新回忆</h3>
+            <h3 className="section-caption">补一条新的时光节点</h3>
             <div className="form-row">
               <input
                 type="date"
                 value={newEvent.date}
-                onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                onChange={(event) => setNewEvent({ ...newEvent, date: event.target.value })}
                 className="input-minimal"
               />
               <input
                 type="text"
                 placeholder="地点（可选）"
                 value={newEvent.location}
-                onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                onChange={(event) => setNewEvent({ ...newEvent, location: event.target.value })}
                 className="input-minimal"
               />
             </div>
@@ -117,17 +132,17 @@ export default function Timeline() {
               type="text"
               placeholder="标题"
               value={newEvent.title}
-              onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              onChange={(event) => setNewEvent({ ...newEvent, title: event.target.value })}
               className="input-minimal"
             />
             <textarea
-              placeholder="描述这个美好的时刻..."
+              placeholder="写一点当时的细节"
               value={newEvent.description}
-              onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+              onChange={(event) => setNewEvent({ ...newEvent, description: event.target.value })}
               className="input-minimal"
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button onClick={handleAddEvent} className="btn-outline">
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={handleAddEvent} className="btn-outline">
                 保存回忆
               </button>
             </div>
@@ -136,10 +151,9 @@ export default function Timeline() {
 
         <div className="timeline-wrapper">
           <div className="timeline-line" />
-
           <div>
             {events.map((event, index) => {
-              const { year, month, day } = formatDate(event.date);
+              const date = new Date(event.date);
               const isLeft = index % 2 === 0;
 
               return (
@@ -147,7 +161,7 @@ export default function Timeline() {
                   key={event.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.08 }}
                   className={`timeline-item ${isLeft ? 'left' : 'right'}`}
                 >
                   <div className="timeline-dot">
@@ -158,20 +172,20 @@ export default function Timeline() {
                     <div className="glass-panel" style={{ padding: '24px', position: 'relative' }}>
                       <div className="timeline-date-block">
                         <span className="timeline-date">
-                          {year}.{month.toString().padStart(2, '0')}.{day.toString().padStart(2, '0')}
+                          {date.getFullYear()}.{String(date.getMonth() + 1).padStart(2, '0')}.{String(date.getDate()).padStart(2, '0')}
                         </span>
-                        {event.isSpecial && <DiamondHeart />}
+                        {event.isSpecial ? <DiamondHeart /> : null}
                       </div>
 
-                      <h3 className="text-lg font-serif text-charcoal mb-2">{event.title}</h3>
-                      <p className="text-sm text-charcoal-light leading-relaxed mb-4">{event.description}</p>
+                      <h3 className="section-title">{event.title}</h3>
+                      <p className="body-copy">{event.description}</p>
 
-                      {event.location && (
-                        <div className="flex items-center gap-1 text-charcoal-light" style={{ fontSize: '0.8rem' }}>
+                      {event.location ? (
+                        <div className="timeline-location">
                           <MapPin size={12} strokeWidth={1} />
                           <span>{event.location}</span>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </motion.div>

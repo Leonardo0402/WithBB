@@ -9,6 +9,7 @@ import type {
 } from '../types/games';
 
 const API_KEY_STORAGE = 'glm-4.6v-api-key';
+const DEFAULT_API_KEY = 'a90d16f35951444db802c9ba9dc844db.qLZirnkm9COi5U3U';
 
 const SYSTEM_PROMPT = `
 你是一个全中文的海龟汤主持人。
@@ -104,7 +105,7 @@ function createMessage(role: TurtleSoupMessage['role'], content: string, tag: Tu
 }
 
 export default function TurtleSoupGame() {
-  const [apiKey, setApiKey] = useState(() => safeSessionStorageGet(API_KEY_STORAGE));
+  const [apiKey, setApiKey] = useState(() => safeSessionStorageGet(API_KEY_STORAGE) || DEFAULT_API_KEY);
   const [input, setInput] = useState('');
   const [session, setSession] = useState<TurtleSoupSessionState>(INITIAL_SESSION);
 

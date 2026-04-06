@@ -7,66 +7,41 @@ export interface Photo {
 }
 
 export const GALLERY_STORAGE_KEY = 'gallery-photos';
+export const DEFAULT_PHOTO_COUNT = 49;
 
-export const DEFAULT_IMAGE_FILES = [
-  '寰俊鍥剧墖_20260322204303_808_104.jpg',
-  '寰俊鍥剧墖_20260322204307_812_104.jpg',
-  '寰俊鍥剧墖_20260322204308_813_104.jpg',
-  '寰俊鍥剧墖_20260322204309_814_104.jpg',
-  '寰俊鍥剧墖_20260322204310_815_104.jpg',
-  '寰俊鍥剧墖_20260322204312_816_104.jpg',
-  '寰俊鍥剧墖_20260322204313_817_104.jpg',
-  '寰俊鍥剧墖_20260322204314_818_104.jpg',
-  '寰俊鍥剧墖_20260322204315_819_104.jpg',
-  '寰俊鍥剧墖_20260322204316_820_104.jpg',
-  '寰俊鍥剧墖_20260322204317_821_104.jpg',
-  '寰俊鍥剧墖_20260322204319_822_104.jpg',
-  '寰俊鍥剧墖_20260322204320_823_104.jpg',
-  '寰俊鍥剧墖_20260322204321_824_104.jpg',
-  '寰俊鍥剧墖_20260322204322_825_104.jpg',
-  '寰俊鍥剧墖_20260322204323_826_104.jpg',
-  '寰俊鍥剧墖_20260322204324_827_104.jpg',
-  '寰俊鍥剧墖_20260322204325_828_104.jpg',
-  '寰俊鍥剧墖_20260322204326_829_104.jpg',
-  '寰俊鍥剧墖_20260322204328_830_104.jpg',
-  '寰俊鍥剧墖_20260322204329_831_104.jpg',
-  '寰俊鍥剧墖_20260322204330_832_104.jpg',
-  '寰俊鍥剧墖_20260322204332_833_104.jpg',
-  '寰俊鍥剧墖_20260322204334_834_104.jpg',
-  '寰俊鍥剧墖_20260322204335_835_104.jpg',
-  '寰俊鍥剧墖_20260322204336_836_104.jpg',
-  '寰俊鍥剧墖_20260322204337_837_104.jpg',
-  '寰俊鍥剧墖_20260322204338_838_104.jpg',
-  '寰俊鍥剧墖_20260322204340_839_104.jpg',
-  '寰俊鍥剧墖_20260322204341_840_104.jpg',
-  '寰俊鍥剧墖_20260322204342_841_104.jpg',
-  '寰俊鍥剧墖_20260322204343_842_104.jpg',
-  '寰俊鍥剧墖_20260322204344_843_104.jpg',
-  '寰俊鍥剧墖_20260322204345_844_104.jpg',
-  '寰俊鍥剧墖_20260322204347_845_104.jpg',
-  '寰俊鍥剧墖_20260322204348_846_104.jpg',
-  '寰俊鍥剧墖_20260322204349_847_104.jpg',
-  '寰俊鍥剧墖_20260322204350_848_104.jpg',
-  '寰俊鍥剧墖_20260322204352_849_104.jpg',
-  '寰俊鍥剧墖_20260322204353_850_104.jpg',
-  '寰俊鍥剧墖_20260322204354_851_104.jpg',
-  '寰俊鍥剧墖_20260322204355_852_104.jpg',
-  '寰俊鍥剧墖_20260322204356_853_104.jpg',
-  '寰俊鍥剧墖_20260322204357_854_104.jpg',
-  '寰俊鍥剧墖_20260322204358_855_104.jpg',
-  '寰俊鍥剧墖_20260322204400_856_104.jpg',
-  '寰俊鍥剧墖_20260322204401_857_104.jpg',
-  '寰俊鍥剧墖_20260322204402_858_104.jpg',
-  '寰俊鍥剧墖_20260322204403_859_104.jpg',
-];
+function toDefaultImageName(index: number) {
+  return `pic-${String(index + 1).padStart(2, '0')}.jpg`;
+}
 
-export function getDefaultPhotos(): Photo[] {
-  return DEFAULT_IMAGE_FILES.map((filename, index) => ({
+function toDefaultPhoto(index: number): Photo {
+  return {
     id: `pic-${index}`,
-    src: `/pic/${filename}`,
+    src: `/pic/${toDefaultImageName(index)}`,
     title: `甜蜜瞬间 ${index + 1}`,
     isFavorite: false,
-  }));
+  };
+}
+
+export function getDefaultPhotos(): Photo[] {
+  return Array.from({ length: DEFAULT_PHOTO_COUNT }, (_, index) => toDefaultPhoto(index));
+}
+
+export function normalizeStoredPhotos(photos: Photo[]): Photo[] {
+  return photos.map((photo) => {
+    if (photo.id.startsWith('pic-')) {
+      const numericIndex = Number(photo.id.replace('pic-', ''));
+
+      if (!Number.isNaN(numericIndex) && numericIndex >= 0 && numericIndex < DEFAULT_PHOTO_COUNT) {
+        return {
+          ...photo,
+          src: `/pic/${toDefaultImageName(numericIndex)}`,
+          title: photo.title || `甜蜜瞬间 ${numericIndex + 1}`,
+        };
+      }
+    }
+
+    return photo;
+  });
 }
 
 export function getMemoryPhotoPool(count = 8): Photo[] {

@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Grid3x3, Heart, Image as ImageIcon, LayoutGrid, RefreshCw, Upload, X } from 'lucide-react';
-import { GALLERY_STORAGE_KEY, getDefaultPhotos, type Photo } from '../utils/gallery';
+import {
+  GALLERY_STORAGE_KEY,
+  getDefaultPhotos,
+  normalizeStoredPhotos,
+  type Photo,
+} from '../utils/gallery';
 
 function readPhotos() {
   const stored = localStorage.getItem(GALLERY_STORAGE_KEY);
@@ -13,7 +18,7 @@ function readPhotos() {
 
   try {
     const parsed = JSON.parse(stored) as Photo[];
-    return parsed.length > 0 ? parsed : getDefaultPhotos();
+    return parsed.length > 0 ? normalizeStoredPhotos(parsed) : getDefaultPhotos();
   } catch {
     return getDefaultPhotos();
   }
